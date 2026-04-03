@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Okta Access Request Workflow",
+  "description": "Workflow template for managing access requests in Okta IGA",
+  "version": "1.0.0",
+  "workflow": {
+    "name": "Standard Access Request",
+    "description": "Multi-stage approval workflow for Okta group and application access",
+    "stages": [
+      {
+        "id": "submit",
+        "name": "Request Submission",
+        "type": "USER_ACTION",
+        "required_fields": ["userId", "resourceId", "resourceType", "justification"],
+        "transitions": [
+          { "to": "manager_approval", "condition": "always" }
+        ]
+      },
+      {
+        "id": "manager_approval",
+        "name": "Manager Approval",
+        "type": "APPROVAL",
+        "approver_type": "MANAGER",
+        "timeout_days": 5,
+        "escalation_after_days": 3,
+        "transitions": [
+          { "to": "security_review",  "condition": "approved", "trigger": "HIGH_RISK_RESOURCE" },
+          { "to": "provisioning",     "condition": "approved" },
+          { "to": "rejected",         "condition": "denied" },
+          { "to": "expired",          "condition": "timeout" }
+        ]
+      },
+      {
+        "id": "security_review",
+        "name": "Security Team Review",
+        "type": "APPROVAL",
+        "approver_type": "GROUP",
+        "approver_group": "Security-Approvers",
+        "timeout_days": 3,
+        "transitions": [
+          { "to": "provisioning", "condition": "approved" },
+          { "to": "rejected",     "condition": "denied" },
+          { "to": "expired",      "condition": "timeout" }
+        ]
+      },
+      {
+        "id": "provisioning",
+        "name": "Automated Provisioning",
+        "type": "AUTOMATION",
+        "script": "access-request-automation.ps1",
+        "action": "ApproveRequest",
+        "transitions": [
+          { "to": "completed",     "condition": "success" },
+          { "to": "prov_failure",  "condition": "failure" }
+        ]
+      },
+      {
+        "id": "completed",
+        "name": "Access Granted",
+        "type": "TERMINAL",
+        "notifications": ["requester", "manager", "it_helpdesk"]
+      },
+      {
+        "id": "rejected",
+        "name": "Request Rejected",
+        "type": "TERMINAL",
+        "notifications": ["requester", "manager"]
+      },
+      {
+        "id": "expired",
+        "name": "Request Expired",
+        "type": "TERMINAL",
+        "notifications": ["requester", "manager", "it_helpdesk"]
+      },
+      {
+        "id": "prov_failure",
+        "name": "Provisioning Failed",
+        "type": "TERMINAL",
+        "notifications": ["requester", "it_helpdesk", "iga_team"]
+      }
+    ],
+    "high_risk_resources": [
+      "Administrators",
+      "Finance-System-Admins",
+      "Privileged-Access",
+      "Security-Operations"
+    ],
+    "notifications": {
+      "email_template_approved": "Your access request for {resourceName} has been approved.",
+      "email_template_denied":   "Your access request for {resourceName} has been denied. Reason: {reason}.",
+      "email_template_pending":  "Your access request for {resourceName} is pending {approverName}'s approval.",
+      "slack_webhook_env":       "SLACK_WEBHOOK_URL"
+    },
+    "audit": {
+      "log_all_transitions": true,
+      "retain_completed_requests_days": 365,
+      "export_format": "CSV"
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Okta Lifecycle Automation (JML)",
+  "description": "Joiner-Mover-Leaver workflow automation template for Okta IGA",
+  "version": "1.0.0",
+  "lifecycle": {
+    "joiner": {
+      "description": "New employee onboarding automation",
+      "trigger": {
+        "type": "EVENT",
+        "source": "HR_SYSTEM",
+        "event": "employee.hired",
+        "delay_hours": 0
+      },
+      "actions": [
+        {
+          "order": 1,
+          "name": "Create Okta Account",
+          "type": "USER_CREATE",
+          "script": "user-provisioning.ps1",
+          "action": "Create",
+          "required_attributes": ["firstName", "lastName", "email", "department", "title", "managerId"],
+          "on_failure": "ALERT_AND_RETRY"
+        },
+        {
+          "order": 2,
+          "name": "Assign Default Groups",
+          "type": "GROUP_ASSIGNMENT",
+          "groups": ["Everyone", "New Hires - Onboarding"],
+          "condition": "user.status == 'ACTIVE'",
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 3,
+          "name": "Assign Role-Based Groups",
+          "type": "ROLE_ASSIGNMENT",
+          "mapping": "role_to_group_mapping.json",
+          "source_attribute": "department",
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 4,
+          "name": "Assign Applications",
+          "type": "APP_ASSIGNMENT",
+          "apps": ["Microsoft 365", "Slack", "Zoom"],
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 5,
+          "name": "Send Welcome Email",
+          "type": "NOTIFICATION",
+          "template": "welcome_email",
+          "recipients": ["user", "manager"],
+          "on_failure": "LOG"
+        }
+      ]
+    },
+    "mover": {
+      "description": "Employee role change / transfer automation",
+      "trigger": {
+        "type": "EVENT",
+        "source": "HR_SYSTEM",
+        "event": "employee.transferred",
+        "delay_hours": 0
+      },
+      "actions": [
+        {
+          "order": 1,
+          "name": "Update User Profile",
+          "type": "USER_UPDATE",
+          "script": "user-provisioning.ps1",
+          "action": "Update",
+          "attributes_to_update": ["department", "title", "manager", "costCenter"],
+          "on_failure": "ALERT_AND_RETRY"
+        },
+        {
+          "order": 2,
+          "name": "Remove Old Role Groups",
+          "type": "GROUP_REMOVAL",
+          "strategy": "REMOVE_PREVIOUS_ROLE_GROUPS",
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 3,
+          "name": "Assign New Role Groups",
+          "type": "ROLE_ASSIGNMENT",
+          "mapping": "role_to_group_mapping.json",
+          "source_attribute": "department",
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 4,
+          "name": "Access Certification",
+          "type": "CERTIFICATION",
+          "certifier": "new_manager",
+          "window_days": 30,
+          "on_failure": "ALERT"
+        }
+      ]
+    },
+    "leaver": {
+      "description": "Employee termination / offboarding automation",
+      "trigger": {
+        "type": "EVENT",
+        "source": "HR_SYSTEM",
+        "event": "employee.terminated",
+        "delay_hours": 0
+      },
+      "sla_hours": 4,
+      "actions": [
+        {
+          "order": 1,
+          "name": "Revoke Active Sessions",
+          "type": "SESSION_REVOKE",
+          "description": "Immediately terminate all active Okta sessions",
+          "on_failure": "ALERT_URGENT"
+        },
+        {
+          "order": 2,
+          "name": "Deactivate Okta Account",
+          "type": "USER_DEACTIVATE",
+          "script": "user-provisioning.ps1",
+          "action": "Deactivate",
+          "send_email": false,
+          "on_failure": "ALERT_URGENT"
+        },
+        {
+          "order": 3,
+          "name": "Remove All Group Memberships",
+          "type": "GROUP_REMOVAL_ALL",
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 4,
+          "name": "Revoke Application Access",
+          "type": "APP_REVOKE_ALL",
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 5,
+          "name": "Archive User Data",
+          "type": "DATA_ARCHIVE",
+          "retain_days": 365,
+          "on_failure": "ALERT"
+        },
+        {
+          "order": 6,
+          "name": "Notify IT Helpdesk",
+          "type": "NOTIFICATION",
+          "template": "leaver_notification",
+          "recipients": ["it_helpdesk", "manager", "hr"],
+          "on_failure": "LOG"
+        },
+        {
+          "order": 7,
+          "name": "Generate Leaver Audit Report",
+          "type": "AUDIT_REPORT",
+          "script": "okta-audit-reporting.ps1",
+          "on_failure": "LOG"
+        }
+      ]
+    }
+  },
+  "notifications": {
+    "alert_email": "iga-team@company.com",
+    "slack_channel": "#iga-alerts",
+    "urgent_pagerduty": true
+  },
+  "compliance": {
+    "log_all_actions": true,
+    "require_justification_for_manual_overrides": true,
+    "max_leaver_deprovisioning_hours": 4
+  }
+}

@@ -1,0 +1,31 @@
+# Okta IGA Automation – Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# HTTP client with connection pooling and retry
+requests==2.32.3
+
+# Event hook web server
+flask==3.1.0
+
+# Flask rate limiting (optional, recommended for production event hooks)
+flask-limiter==3.9.3
+
+# Environment variable management
+python-dotenv==1.0.1
+
+# SCIM / JSON schema validation
+jsonschema==4.23.0
+
+# Type checking and annotations (runtime)
+typing-extensions==4.12.2
+
+# Date / time utilities
+python-dateutil==2.9.0.post0
+
+# Data serialisation
+orjson==3.11.6
+
+# Testing
+pytest==8.3.4
+pytest-mock==3.14.0
+responses==0.25.3

@@ -1,0 +1,93 @@
+# Okta IGA Automation – .gitignore
+
+# ─── Secrets & Config ─────────────────────────────────────────────────────────
+config/config.json
+.env
+.env.*
+!.env.example
+*.token
+*.secret
+*_secret.*
+*_token.*
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.eggs/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# ─── PowerShell ───────────────────────────────────────────────────────────────
+*.ps1xml
+*.psd1
+!*.psd1.example
+
+# ─── Logs & Reports ───────────────────────────────────────────────────────────
+logs/
+reports/
+*.log
+*.csv
+!config/*.csv
+data/
+
+# ─── IDE / Editor ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+.dockerignore
+docker-compose.override.yml
+
+# ─── Terraform (if used alongside IaC) ───────────────────────────────────────
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+
+# ─── Temporary files ──────────────────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.orig
