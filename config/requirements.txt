@@ -23,7 +23,7 @@ typing-extensions==4.12.2
 python-dateutil==2.9.0.post0
 
 # Data serialisation
-orjson==3.10.13
+orjson==3.11.6
 
 # Testing
 pytest==8.3.4
