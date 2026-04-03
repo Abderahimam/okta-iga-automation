@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Okta MFA Enrollment Policy",
+  "description": "Example MFA enrollment policy for enterprise Okta configuration",
+  "version": "1.0.0",
+  "policy": {
+    "type": "MFA_ENROLL",
+    "name": "Corporate MFA Enrollment Policy",
+    "description": "Enforces MFA enrollment for all active users. Okta Verify required; additional factors optional.",
+    "status": "ACTIVE",
+    "priority": 1,
+    "conditions": {
+      "people": {
+        "groups": {
+          "include": ["EVERYONE"]
+        }
+      }
+    },
+    "settings": {
+      "authenticators": [
+        {
+          "key": "okta_verify",
+          "enroll": { "self": "REQUIRED" },
+          "description": "Okta Verify push notifications and TOTP"
+        },
+        {
+          "key": "okta_password",
+          "enroll": { "self": "REQUIRED" },
+          "description": "Password authentication"
+        },
+        {
+          "key": "okta_email",
+          "enroll": { "self": "OPTIONAL" },
+          "description": "Email authentication for account recovery"
+        },
+        {
+          "key": "google_otp",
+          "enroll": { "self": "OPTIONAL" },
+          "description": "Google Authenticator TOTP"
+        },
+        {
+          "key": "security_question",
+          "enroll": { "self": "OPTIONAL" },
+          "description": "Security question for account recovery"
+        },
+        {
+          "key": "phone_number",
+          "enroll": { "self": "OPTIONAL" },
+          "description": "SMS / voice call OTP"
+        }
+      ]
+    },
+    "rules": [
+      {
+        "name": "Privileged Users - Strict MFA",
+        "priority": 1,
+        "status": "ACTIVE",
+        "conditions": {
+          "people": {
+            "groups": {
+              "include": ["Administrators", "Security-Operations", "Finance-Admins"]
+            }
+          }
+        },
+        "actions": {
+          "signon": {
+            "access": "ALLOW",
+            "requireFactor": true,
+            "factorPromptMode": "ALWAYS",
+            "rememberDeviceLifetime": {
+              "usePersistentCookie": false,
+              "deviceLifetimeinMinutes": 60
+            },
+            "session": {
+              "usePersistentCookie": false,
+              "maxSessionIdleMinutes": 30,
+              "maxSessionLifetimeMinutes": 240
+            }
+          }
+        }
+      },
+      {
+        "name": "Standard Users - Risk-Based MFA",
+        "priority": 2,
+        "status": "ACTIVE",
+        "conditions": {
+          "people": {
+            "groups": {
+              "include": ["EVERYONE"]
+            }
+          },
+          "network": {
+            "connection": "ANYWHERE"
+          }
+        },
+        "actions": {
+          "signon": {
+            "access": "ALLOW",
+            "requireFactor": true,
+            "factorPromptMode": "SESSION",
+            "rememberDeviceLifetime": {
+              "usePersistentCookie": false,
+              "deviceLifetimeinMinutes": 480
+            },
+            "session": {
+              "usePersistentCookie": false,
+              "maxSessionIdleMinutes": 120,
+              "maxSessionLifetimeMinutes": 480
+            }
+          }
+        }
+      },
+      {
+        "name": "Trusted Network - Reduced Friction",
+        "priority": 3,
+        "status": "ACTIVE",
+        "conditions": {
+          "people": {
+            "groups": {
+              "include": ["EVERYONE"]
+            }
+          },
+          "network": {
+            "connection": "ON_NETWORK"
+          }
+        },
+        "actions": {
+          "signon": {
+            "access": "ALLOW",
+            "requireFactor": false,
+            "session": {
+              "usePersistentCookie": false,
+              "maxSessionIdleMinutes": 480,
+              "maxSessionLifetimeMinutes": 1440
+            }
+          }
+        }
+      }
+    ]
+  }
+}

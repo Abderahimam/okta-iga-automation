@@ -1,0 +1,53 @@
+{
+  "_comment": "Copy this file to config.json and fill in your values. NEVER commit config.json to source control.",
+  "okta": {
+    "domain": "YOUR_ORG.okta.com",
+    "api_token_env": "OKTA_API_TOKEN",
+    "scim_base_url": "https://YOUR_ORG.okta.com/scim/v2",
+    "scim_token_env": "SCIM_BEARER_TOKEN",
+    "event_hook_secret_env": "OKTA_HOOK_SECRET"
+  },
+  "provisioning": {
+    "default_groups": [
+      "Everyone",
+      "New Hires - Onboarding"
+    ],
+    "temp_password_length": 16,
+    "send_welcome_email": true,
+    "activate_on_create": true,
+    "password_policy": {
+      "min_length": 12,
+      "require_uppercase": true,
+      "require_lowercase": true,
+      "require_number": true,
+      "require_special": true
+    }
+  },
+  "mfa": {
+    "required_factors": ["okta_verify"],
+    "optional_factors": ["google_otp", "okta_email"],
+    "grace_period_days": 7,
+    "session_lifetime_minutes": 480,
+    "persistent_cookie": false
+  },
+  "reporting": {
+    "output_dir": "./reports",
+    "retention_days": 90,
+    "format": "CSV",
+    "schedule_cron": "0 6 * * *",
+    "alert_on_suspicious_ips": true,
+    "failed_login_threshold": 5
+  },
+  "access_requests": {
+    "require_justification": true,
+    "auto_approve_groups": [],
+    "approver_group_id": "YOUR_APPROVER_GROUP_ID",
+    "request_timeout_days": 7
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "./logs",
+    "max_log_size_mb": 100,
+    "max_log_files": 10
+  }
+}
