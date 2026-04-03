@@ -138,18 +138,42 @@ function New-OktaUser {
     )
     Write-Log "Creating user: $($UserAttributes.login)"
 
+    # Generate a secure temporary password using .NET cryptographic APIs (cross-platform)
+    function New-SecureRandomPassword {
+        param([int]$Length = 16)
+        $chars    = 'abcdefghijkmnpqrstuvwxyz'
+        $upper    = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+        $digits   = '23456789'
+        $specials = '!@#$%^&*()-_=+'
+        $all      = $chars + $upper + $digits + $specials
+        $rng      = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+        $bytes    = [byte[]]::new($Length)
+        $rng.GetBytes($bytes)
+        # Ensure at least one of each required character class
+        $pwd = [char]$upper[$bytes[0] % $upper.Length]
+        $pwd += [char]$digits[$bytes[1] % $digits.Length]
+        $pwd += [char]$specials[$bytes[2] % $specials.Length]
+        for ($i = 3; $i -lt $Length; $i++) {
+            $pwd += [char]$all[$bytes[$i] % $all.Length]
+        }
+        # Shuffle the password characters
+        return -join ($pwd.ToCharArray() | Get-Random -Count $pwd.Length)
+    }
+
+    $tempPwd = if ($UserAttributes.ContainsKey("tempPassword")) { $UserAttributes.tempPassword } else { New-SecureRandomPassword }
+
     $body = @{
         profile    = @{
             firstName   = $UserAttributes.firstName
             lastName    = $UserAttributes.lastName
-            email       = $UserAttributes.email ?? $UserAttributes.login
+            email       = if ($UserAttributes.ContainsKey("email")) { $UserAttributes.email } else { $UserAttributes.login }
             login       = $UserAttributes.login
             department  = $UserAttributes.department
             title       = $UserAttributes.title
             mobilePhone = $UserAttributes.mobilePhone
         }
         credentials = @{
-            password = @{ value = $UserAttributes.tempPassword ?? [System.Web.Security.Membership]::GeneratePassword(16, 4) }
+            password = @{ value = $tempPwd }
         }
     } | ConvertTo-Json -Depth 5
 

@@ -106,7 +106,9 @@ class ScimProvisioner:
             resp = self._session.request(method, url, json=json, params=params, timeout=self._timeout)
 
             if resp.status_code == 429:
-                wait = int(resp.headers.get("Retry-After", 0)) or min(2 ** attempt + random.uniform(0, 1), 60)
+                retry_after_header = resp.headers.get("Retry-After")
+                retry_after = int(retry_after_header) if retry_after_header is not None else None
+                wait = retry_after if retry_after is not None else min(2 ** attempt + random.uniform(0, 1), 60)
                 if attempt > self._max_retries:
                     raise ScimError("Rate limit exceeded.", status_code=429)
                 logger.warning("Rate limited. Retrying in %.1fs.", wait)

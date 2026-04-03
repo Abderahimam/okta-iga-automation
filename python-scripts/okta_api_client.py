@@ -136,8 +136,9 @@ class OktaClient:
             )
 
             if response.status_code == 429:
-                retry_after = int(response.headers.get("Retry-After", 0))
-                wait = retry_after or (
+                retry_after_header = response.headers.get("Retry-After")
+                retry_after = int(retry_after_header) if retry_after_header is not None else None
+                wait = retry_after if retry_after is not None else (
                     min(self._BACKOFF_BASE ** attempt + random.uniform(0, 1), self._BACKOFF_MAX)
                 )
                 if attempt > self._max_retries:

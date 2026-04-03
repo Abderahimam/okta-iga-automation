@@ -143,8 +143,9 @@ def dispatch_event(event: Dict) -> None:
             handler(event)
         except Exception as exc:  # noqa: BLE001
             logger.error(
-                "Handler '%s' raised an error for event '%s': %s",
-                handler.__name__, event_type, exc,
+                "Handler '%s' raised %s for event '%s': %s",
+                handler.__name__, type(exc).__name__, event_type, exc,
+                exc_info=True,
             )
 
 
